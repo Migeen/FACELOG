@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+SQLAlchemy
+asyncpg
+aiosqlite
+pydantic
+passlib[bcrypt]
+python-jose
+PyJWT
+pytest
+pydantic
+pydantic-settings
+pgvector
