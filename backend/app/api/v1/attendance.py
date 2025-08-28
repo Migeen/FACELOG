@@ -1,20 +1,34 @@
-from fastapi import APIRouter, HTTPException
-from app.schemas.attendance import CheckInOut
-from app.services.attendance_service import record_attendance
+from fastapi import APIRouter, UploadFile, Form
+from app.services.attendance_service import mark_attendance
+import shutil
+import uuid
+import os
+
+router = APIRouter(prefix="/attendance", tags=["Attendance"])
+
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-router = APIRouter()
+@router.post("/clockin")
+async def clockin(employee_id: int = Form(...), file: UploadFile = None):
+    file_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}.jpg")
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    result = await mark_attendance(employee_id, file_path, "clock-in")
+
+    os.remove(file_path)
+    return result
 
 
-@router.post('/check')
-async def check(payload: CheckInOut):
-    if payload.type not in ("checkin", "checkout"):
-        raise HTTPException(status_code=400, detail="type must be 'checkin' or 'checkout'")
-    rec = await record_attendance(payload.employee_id, payload.type)
-    return {"status": "ok", "record": rec}
+@router.post("/clockout")
+async def clockout(employee_id: int = Form(...), file: UploadFile = None):
+    file_path = os.path.join(UPLOAD_DIR, f"{uuid.uuid4()}.jpg")
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
+    result = await mark_attendance(employee_id, file_path, "clock-out")
 
-@router.get('/reports/{employee_id}')
-async def report(employee_id: int):
-# placeholder: return empty list
-    return {"employee_id": employee_id, "records": []}
+    os.remove(file_path)
+    return result

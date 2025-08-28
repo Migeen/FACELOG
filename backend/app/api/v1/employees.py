@@ -1,7 +1,7 @@
 from fastapi import APIRouter, File, HTTPException, UploadFile,status
 from typing import List
 from app.schemas.employee import EmployeeCreate, EmployeeOut
-from app.services.face_service import enroll_embedding
+# from app.services.attendance_service import enroll_embedding
 
 
 router = APIRouter()
@@ -28,10 +28,10 @@ def list_employees():
     return list(EMPLOYEES.values())
 
 
-@router.post('/{employee_id}/enroll-embedding')
-async def enroll(employee_id: int, file: UploadFile = File(...)):
-    if employee_id not in EMPLOYEES:
-        raise HTTPException(status_code=404, detail='Employee not found')
-    content = await file.read()
-    res = await enroll_embedding(employee_id, content)
-    return {"employee_id": employee_id, "filename": file.filename, **res}
+# @router.post('/{employee_id}/enroll-embedding')
+# async def enroll(employee_id: int, file: UploadFile = File(...)):
+#     if employee_id not in EMPLOYEES:
+#         raise HTTPException(status_code=404, detail='Employee not found')
+#     content = await file.read()
+#     res = await enroll_embedding(employee_id, content)
+#     return {"employee_id": employee_id, "filename": file.filename, **res}
