@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, File, HTTPException, UploadFile,status
 from typing import List
 from app.schemas.employee import EmployeeCreate, EmployeeOut
 from app.services.face_service import enroll_embedding

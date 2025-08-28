@@ -1,15 +1,24 @@
-from fastapi import APIRouter, HTTPException, status
-from app.schemas.auth import LoginIn, Token
-from app.core.security import create_access_token
-
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import get_db
 
 router = APIRouter()
 
+@router.post("/validate")
+async def validate_employee(payload: dict, db: AsyncSession = Depends(get_db)):
+    try:
+        # Use correct SQLAlchemy text() for raw SQL
+        from sqlalchemy import text
 
-@router.post('/login', response_model=Token)
-def login(payload: LoginIn):
-# placeholder: accept anything
-    if not payload.username or not payload.password:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
-    token = create_access_token({"sub": payload.username})
-    return {"access_token": token, "token_type": "bearer"}
+        query = text("SELECT id FROM employees WHERE email = :email AND password = :password")
+        result = await db.execute(query, {"email": payload["email"], "password": payload["password"]})
+
+        employee = result.first()  # async fetch one row
+        if not employee:
+            return {"status": "error", "message": "Invalid email or password"}
+
+        return {"status": "success", "employee_id": employee[0]}
+
+    except Exception as e:
+        print("DB Error:", str(e))
+        raise HTTPException(status_code=500, detail="Database error")

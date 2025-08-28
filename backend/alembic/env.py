@@ -10,6 +10,11 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + '/../app')
 from app.core.database import Base
 
+import app.models.employee
+import app.models.device
+import app.models.attendance
+import app.models.embedding
+
 target_metadata = Base.metadata
 
 # this is the Alembic Config object, which provides
@@ -25,7 +30,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+# target_metadata = None
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

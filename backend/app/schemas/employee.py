@@ -9,8 +9,15 @@ class EmployeeBase(BaseModel):
 
 
 class EmployeeCreate(EmployeeBase):
-    pass
+    password: str
 
+class EmployeeLogin(BaseModel):
+    email: str
+    password: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token:str
 
 class EmployeeOut(EmployeeBase):
     id: int
