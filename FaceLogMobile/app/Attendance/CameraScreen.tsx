@@ -8,15 +8,15 @@ import {
   Alert,
   Animated,
 } from 'react-native';
-import { Camera } from 'expo-camera';
+import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as FaceDetector from 'expo-face-detector';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE = "http://192.168.1.9:8000/api/v1";
 
 export default function CameraScreen() {
-  const cameraRef = useRef<any>(null);
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const cameraRef = useRef<CameraView>(null);
+  const [permission, requestPermission] = useCameraPermissions();
   const [loading, setLoading] = useState(false);
   const [livenessOk, setLivenessOk] = useState<boolean | null>(null);
   const [statusText, setStatusText] = useState('Align your face inside the oval');
@@ -33,14 +33,6 @@ export default function CameraScreen() {
       useNativeDriver: false,
     }).start();
   }, [readyToCaptureCount]);
-
-  // Request camera permission
-  useEffect(() => {
-    (async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })();
-  }, []);
 
   const onFacesDetected = ({ faces }: { faces: any[] }) => {
     if (!faces || faces.length === 0) {
@@ -142,44 +134,140 @@ export default function CameraScreen() {
     }
   };
 
-  if (hasPermission === null) {
+  // Handle permission states
+  if (!permission) {
     return (
       <View style={styles.center}>
         <ActivityIndicator />
-        <Text style={{ marginTop: 8 }}>Requesting camera permission...</Text>
+        <Text style={{ marginTop: 8 }}>Loading camera permissions...</Text>
       </View>
     );
   }
 
-  if (!hasPermission) {
+  if (!permission.granted) {
     return (
       <View style={styles.center}>
-        <Text>Camera permission is required.</Text>
+        <Text style={{ textAlign: 'center', marginBottom: 16 }}>
+          Camera permission is required for attendance
+        </Text>
+        <TouchableOpacity onPress={requestPermission} style={styles.permissionButton}>
+          <Text style={styles.permissionButtonText}>Grant Permission</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Camera
+      <CameraView
         ref={cameraRef}
         style={styles.camera}
-        type={Camera.Constants.Type.front}
+        facing="front"
         onFacesDetected={onFacesDetected}
         faceDetectorSettings={{
-          mode: FaceDetector.Constants.Mode.fast,
-          detectLandmarks: FaceDetector.Constants.Landmarks.all,
-          runClassifications: FaceDetector.Constants.Classifications.none,
+          mode: FaceDetector.FaceDetectorMode.fast,
+          detectLandmarks: FaceDetector.FaceDetectorLandmarks.all,
+          runClassifications: FaceDetector.FaceDetectorClassifications.none,
         }}
       />
 
-      {/* The rest of your overlays, status box, progress bar, toggles remain unchanged */}
+      {/* Add your overlay components here */}
+      <View style={styles.overlay}>
+        <Text style={styles.statusText}>{statusText}</Text>
+        
+        {/* Progress bar */}
+        <View style={styles.progressContainer}>
+          <Animated.View 
+            style={[
+              styles.progressBar,
+              {
+                width: progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0%', '100%']
+                })
+              }
+            ]}
+          />
+        </View>
+
+        {/* Toggle button for clock in/out */}
+        <TouchableOpacity
+          style={styles.toggleButton}
+          onPress={() => setAttendanceStatus(
+            attendanceStatus === 'clockin' ? 'clockout' : 'clockin'
+          )}
+        >
+          <Text style={styles.toggleButtonText}>
+            {attendanceStatus === 'clockin' ? 'Clock In Mode' : 'Clock Out Mode'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  camera: { flex: 1 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#000' 
+  },
+  camera: { 
+    flex: 1 
+  },
+  center: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    padding: 20,
+  },
+  permissionButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  permissionButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  overlay: {
+    position: 'absolute',
+    bottom: 50,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+  },
+  statusText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 12,
+    borderRadius: 8,
+  },
+  progressContainer: {
+    width: '100%',
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 3,
+    marginBottom: 20,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#00FF00',
+    borderRadius: 3,
+  },
+  toggleButton: {
+    backgroundColor: 'rgba(0,122,255,0.8)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  toggleButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });

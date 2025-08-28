@@ -9,9 +9,10 @@ export default function HomeScreen() {
   return (
 
     <Stack.Navigator initialRouteName="Login"> 
-      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Login" component={CameraScreen} />
+      {/* <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Enroll" component={EnrollScreen} />
-      <Stack.Screen name="Dashboard" component={DashboardScreen} />
+      <Stack.Screen name="Dashboard" component={DashboardScreen} /> */}
     </Stack.Navigator>
   );
 }
