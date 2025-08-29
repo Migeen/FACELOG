@@ -7,6 +7,8 @@ import base64
 import numpy as np
 from deepface import DeepFace
 import asyncio
+import uuid
+import os
 
 router = APIRouter()
 
@@ -16,8 +18,14 @@ async def generate_embedding(image_path: str):
     Run DeepFace.represent in a thread to avoid blocking the async loop
     """
     loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(None, lambda: DeepFace.represent(img_path=image_path, model_name="Facenet")[0]["embedding"])
-    return result
+    result = await loop.run_in_executor(
+        None,
+        lambda: DeepFace.represent(img_path=image_path, model_name="Facenet")[0]["embedding"]
+    )
+    # Normalize embedding
+    embedding = np.array(result)
+    embedding = embedding / np.linalg.norm(embedding)
+    return embedding.tolist()
 
 
 @router.post("/")
@@ -30,22 +38,25 @@ async def enroll_face(data: dict, db: AsyncSession = Depends(get_db)):
     if not image_base64:
         raise HTTPException(status_code=400, detail="No image provided")
 
-    # Decode image
+    # Decode image and save temporarily
+    temp_path = f"temp_{uuid.uuid4().hex}.jpg"
     image_bytes = base64.b64decode(image_base64)
-    temp_path = "temp.jpg"
     with open(temp_path, "wb") as f:
         f.write(image_bytes)
 
-    # Generate embedding
     try:
-        embedding_result = await generate_embedding(temp_path)
+        embedding_vector = await generate_embedding(temp_path)
     except Exception as e:
+        os.remove(temp_path)
         raise HTTPException(status_code=500, detail=f"Embedding error: {e}")
 
-    # Store in DB
+    # Cleanup temp file
+    os.remove(temp_path)
+
+    # Store embedding in DB
     db_embedding = Embedding(
         employee_id=employee_id,
-        vector=np.array(embedding_result).tolist(),
+        vector=embedding_vector,
         created_at=datetime.utcnow()
     )
 

@@ -30,7 +30,7 @@ export default function DashboardScreen() {
   const [currentTime, setCurrentTime] = useState<string>(new Date().toLocaleTimeString());
   const route = useRoute<any>();
   const { employeeId } = route.params;
-    
+
   console.log(employeeId);
 
   useEffect(() => {
@@ -72,9 +72,9 @@ export default function DashboardScreen() {
   const handleCheckInOut = () => {
     // navigate to camera/check-in screen
     router.push({
-      pathname:'/attendance/CameraScreen',
-       params: { employeeId },
-});
+      pathname: '/Attendance/CameraScreen',
+      params: { employeeId },
+    });
   };
 
   const handleViewDetails = () => {
@@ -177,7 +177,10 @@ export default function DashboardScreen() {
           <Text style={styles.navLabel}>Check In/Out</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() =>  router.push({pathname:'/Attendance/CameraScreen',params: { employeeId }})}>
+        <TouchableOpacity onPress={() => router.push({
+          pathname: '/Attendance/CameraScreen',
+          params: { employeeId },
+        })}>
           <Feather name="clock" size={20} color="#374151" />
           <Text style={styles.navLabel}>History</Text>
         </TouchableOpacity>

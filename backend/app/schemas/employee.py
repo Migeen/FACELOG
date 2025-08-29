@@ -10,7 +10,6 @@ class EmployeeBase(BaseModel):
     salary: Optional[str] = None
     department: Optional[str] = None
 
-
 class EmployeeCreate(EmployeeBase):
     password: str
 
