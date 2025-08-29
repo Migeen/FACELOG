@@ -35,12 +35,3 @@ export const checkInOut = async (employeeId: number | string, type: "checkin" | 
   }
 };
 
-export const getReport = async (employeeId: number | string) => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/attendance/reports/${employeeId}`);
-    return response.data;
-  } catch (err) {
-    const error = err as AxiosError<ApiError>;
-    throw error.response?.data || { message: "Report fetch failed" };
-  }
-};

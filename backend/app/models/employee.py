@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 from datetime import datetime
 
@@ -15,3 +16,5 @@ class Employee(Base):
     salary = Column(String, nullable=True)
     department = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    reports = relationship("Report", back_populates="employee")

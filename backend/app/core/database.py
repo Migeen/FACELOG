@@ -16,8 +16,6 @@ AsyncSessionLocal = sessionmaker(
     expire_on_commit=False
 )
 
-# Base class for models
-Base = declarative_base()
 
 # Dependency to get async session
 async def get_db() -> AsyncSession:
@@ -26,6 +24,6 @@ async def get_db() -> AsyncSession:
 
 # Initialize DB (create tables)
 async def init_db():
-    from app.models import employee, attendance, embedding, device  # noqa: F401
+    from app.models import employee, attendance, embedding, device, reports  # noqa: F401
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

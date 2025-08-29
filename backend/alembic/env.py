@@ -14,6 +14,7 @@ import app.models.employee
 import app.models.device
 import app.models.attendance
 import app.models.embedding
+import app.models.reports
 
 target_metadata = Base.metadata
 

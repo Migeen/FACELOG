@@ -4,12 +4,14 @@ router = APIRouter()
 
 # Defer imports to avoid circular dependency
 def _import_routers():
-    from . import employees, auth, enroll,attendance
+    from . import employees, auth, enroll,attendance, reports
     return [
         (employees, "/employees", "employees"),
         (auth, "/auth", "auth"),
         (enroll, "/enroll", "enroll"),
-        (attendance,"/attendance","attendance")
+        (attendance,"/attendance","attendance"),
+        (reports, "/reports", "reports"),
+
 
     ]
 for mod, prefix, tag in _import_routers():
