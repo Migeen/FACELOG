@@ -11,7 +11,7 @@ class Employee(Base):
     email = Column(String, nullable=True, unique=True)
     password = Column(String, nullable=True)
     role = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
     phone = Column(String, nullable=True)
     salary = Column(String, nullable=True)
     department = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)

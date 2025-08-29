@@ -1,7 +1,7 @@
 from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     PROJECT_NAME: str = "facelog"
-    DATABASE_URL: str = "postgresql+asyncpg://facelog:facelog@localhost:5432/facelog"
+    DATABASE_URL: str = "postgresql+asyncpg://facelog:facelog@db:5432/facelog"
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     VECTOR_DIMENSION: int = 512

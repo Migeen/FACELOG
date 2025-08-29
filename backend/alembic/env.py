@@ -14,12 +14,18 @@ import app.models.employee
 import app.models.device
 import app.models.attendance
 import app.models.embedding
+import app.models.department
 
+from app.core.config import settings
 target_metadata = Base.metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+SYNC_DATABASE_URL = settings.DATABASE_URL.replace("postgresql+asyncpg", "postgresql+psycopg2")
+config.set_main_option("sqlalchemy.url", SYNC_DATABASE_URL)
+
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
