@@ -6,6 +6,9 @@ class EmployeeBase(BaseModel):
     name: str
     email: Optional[str]
     role: Optional[str]
+    phone: Optional[str] = None
+    salary: Optional[str] = None
+    department: Optional[str] = None
 
 
 class EmployeeCreate(EmployeeBase):

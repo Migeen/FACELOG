@@ -4,7 +4,7 @@ import shutil
 import uuid
 import os
 
-router = APIRouter(prefix="/attendance", tags=["Attendance"])
+router = APIRouter(tags=["Attendance"])
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
