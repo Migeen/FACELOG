@@ -8,7 +8,6 @@ app = FastAPI(title="FaceLog Backend")
 async def startup_event():
     await init_db()
 
-# Mount all routes under /api/v1
 app.include_router(api_v1_router, prefix="/api/v1")
 
 @app.get('/')

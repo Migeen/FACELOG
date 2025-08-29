@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,89 +6,191 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const attendanceSummary = {
-  presentDays: 15,
-  lateDays: 2,
-  totalHours: '156h 10m',
-  attendanceRate: '75%',
-  avgCheckIn: '09:08 AM',
-  avgCheckOut: '05:52 PM',
-};
-
-const dailyRecords = [
-  { id: '1', date: 'Mon, Jan 15', time: '09:00 AM - 06:00 PM', hours: '8h 0m', status: 'Present' },
-  { id: '2', date: 'Sun, Jan 14', time: '09:15 AM - 06:15 PM', hours: '8h 0m', status: 'Late', note: 'Traffic delay' },
-  { id: '3', date: 'Sat, Jan 13', time: '08:45 AM - 05:45 PM', hours: '8h 0m', status: 'Present' },
-  { id: '4', date: 'Fri, Jan 12', time: '09:30 AM - 04:30 PM', hours: '6h 0m', status: 'Partial', note: 'Left early - doctor appointment' },
-  { id: '5', date: 'Thu, Jan 11', time: '-- - --', hours: '0h 0m', status: 'Absent', note: 'Sick leave' },
-  { id: '6', date: 'Wed, Jan 10', time: '09:00 AM - 06:00 PM', hours: '8h 0m', status: 'Present' },
-  { id: '7', date: 'Tue, Jan 9', time: '08:55 AM - 06:05 PM', hours: '8h 10m', status: 'Present' },
-  { id: '8', date: 'Mon, Jan 8', time: '09:20 AM - 06:20 PM', hours: '8h 0m', status: 'Late' },
-];
+const API_BASE = "http://192.168.1.9:8000/api/v1";
 
 const statusColors = {
   Present: '#4CAF50',
   Late: '#FF9800',
   Partial: '#FFC107',
   Absent: '#F44336',
+  default: '#9E9E9E', // Fallback color for unknown statuses
 };
 
 const HistoryScreen = () => {
-  const [timePeriod, setTimePeriod] = useState('Month');
+  const [employeeId, setEmployeeId] = useState<number | null>(null);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [attendanceSummary, setAttendanceSummary] = useState({
+    presentDays: 0,
+    lateDays: 0,
+    totalHours: '0h 0m',
+    attendanceRate: '0%',
+    avgCheckIn: '--:-- --',
+    avgCheckOut: '--:-- --',
+  });
+  const [dailyRecords, setDailyRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const renderRecord = ({ item }) => (
-    <View style={styles.recordCard}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.recordDate}>{item.date}</Text>
-        {item.note && <Text style={styles.note}>{item.note}</Text>}
-        <Text style={styles.recordTime}>{item.time}</Text>
+  // Fetch employeeId
+  useEffect(() => {
+    const fetchEmployeeId = async () => {
+      try {
+        console.log('Fetching employeeId...');
+        const idString = await AsyncStorage.getItem('employeeId');
+        console.log('Retrieved employeeId:', idString);
+        
+        if (idString) {
+          const parsedId = parseInt(idString);
+          setEmployeeId(parsedId);
+        }
+      } catch (error) {
+        console.error('Error fetching employee ID:', error);
+      }
+    };
+    
+    fetchEmployeeId();
+  }, []);
+
+  // Fetch data when dependencies change
+  useEffect(() => {
+    console.log('useEffect triggered - employeeId:', employeeId);
+    if (employeeId) {
+      console.log('Calling fetchData...');
+      fetchData();
+    }
+  }, [employeeId, selectedYear, selectedMonth]);
+
+  const fetchData = useCallback(async () => {
+    console.log('fetchData called with employeeId:', employeeId);
+    if (!employeeId) {
+      console.log('No employeeId, returning early');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      console.log('Loading started, fetching real data...');
+      
+      // Fetch monthly overview (no authentication headers)
+      const overviewResponse = await fetch(
+        `${API_BASE}/reports/employee/${employeeId}/monthly-overview?year=${selectedYear}&month=${selectedMonth}`
+      );
+      
+      if (!overviewResponse.ok) {
+        throw new Error(`HTTP error! status: ${overviewResponse.status}`);
+      }
+      
+      const overviewData = await overviewResponse.json();
+      console.log('Overview data:', overviewData);
+      
+      // Fetch daily records (no authentication headers)
+      const recordsResponse = await fetch(
+        `${API_BASE}/reports/employee/${employeeId}/daily-records?year=${selectedYear}&month=${selectedMonth}`
+      );
+      
+      if (!recordsResponse.ok) {
+        throw new Error(`HTTP error! status: ${recordsResponse.status}`);
+      }
+      
+      const recordsData = await recordsResponse.json();
+      console.log('Records data:', recordsData);
+      
+      // Update state with real data
+      setAttendanceSummary({
+        presentDays: overviewData.present_days || 0,
+        lateDays: overviewData.late_days || 0,
+        totalHours: overviewData.total_hours_formatted || '0h 0m',
+        attendanceRate: `${overviewData.attendance_rate || 0}%`,
+        avgCheckIn: overviewData.average_checkin || '--:-- --',
+        avgCheckOut: overviewData.average_checkout || '--:-- --',
+      });
+      
+      setDailyRecords(recordsData || []);
+      
+    } catch (error) {
+      console.error('Error in fetchData:', error);
+      Alert.alert('Error', 'Failed to load attendance data. Please try again.');
+    } finally {
+      setLoading(false);
+      console.log('Data loading completed');
+    }
+  }, [employeeId, selectedYear, selectedMonth]);
+
+  const getStatusColor = (status: string) => {
+    return statusColors[status] || statusColors.default;
+  };
+
+  const renderRecord = ({ item }) => {
+    // Add defensive checks for all item properties
+    const status = item?.status || 'Unknown';
+    const date = item?.date || 'No date';
+    const time_range = item?.time_range || '--:-- -- - --:-- --';
+    const hours = item?.hours || '0h 0m';
+    const notes = item?.notes;
+
+    return (
+      <View style={styles.recordCard}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.recordDate}>{date}</Text>
+          {notes && <Text style={styles.note}>{notes}</Text>}
+          <Text style={styles.recordTime}>{time_range}</Text>
+        </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={styles.hours}>{hours}</Text>
+          <Text style={[styles.status, { color: getStatusColor(status) }]}>
+            {status}
+          </Text>
+        </View>
       </View>
-      <View style={{ alignItems: 'flex-end' }}>
-        <Text style={styles.hours}>{item.hours}</Text>
-        <Text style={[styles.status, { color: statusColors[item.status] }]}>{item.status}</Text>
+    );
+  };
+
+  const handleMonthChange = (increment: number) => {
+    let newMonth = selectedMonth + increment;
+    let newYear = selectedYear;
+    
+    if (newMonth > 12) {
+      newMonth = 1;
+      newYear++;
+    } else if (newMonth < 1) {
+      newMonth = 12;
+      newYear--;
+    }
+    
+    setSelectedMonth(newMonth);
+    setSelectedYear(newYear);
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#065f46" />
+        <Text style={styles.loadingText}>Loading attendance data...</Text>
       </View>
-    </View>
-  );
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
       <Text style={styles.header}>Attendance History</Text>
       <Text style={styles.subHeader}>View your attendance records and statistics</Text>
 
-      {/* Action Buttons */}
-      <View style={styles.actionRow}>
-        <TouchableOpacity style={styles.actionBtn}>
-          <Text style={styles.actionText}>Export</Text>
+      {/* Month Selector */}
+      <View style={styles.monthSelector}>
+        <TouchableOpacity onPress={() => handleMonthChange(-1)}>
+          <Text style={styles.monthNavButton}>←</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn}>
-          <Text style={styles.actionText}>Filter</Text>
+        <Text style={styles.monthText}>
+          {new Date(selectedYear, selectedMonth - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}
+        </Text>
+        <TouchableOpacity onPress={() => handleMonthChange(1)}>
+          <Text style={styles.monthNavButton}>→</Text>
         </TouchableOpacity>
-      </View>
-
-      {/* Time Period Selector */}
-      <View style={styles.timePeriodRow}>
-        {['Week', 'Month', 'Quarter'].map((period) => (
-          <TouchableOpacity
-            key={period}
-            style={[
-              styles.timeBtn,
-              timePeriod === period && styles.timeBtnActive,
-            ]}
-            onPress={() => setTimePeriod(period)}
-          >
-            <Text
-              style={[
-                styles.timeText,
-                timePeriod === period && styles.timeTextActive,
-              ]}
-            >
-              {period}
-            </Text>
-          </TouchableOpacity>
-        ))}
       </View>
 
       {/* Monthly Overview */}
@@ -126,33 +228,39 @@ const HistoryScreen = () => {
 
       {/* Daily Records */}
       <Text style={styles.dailyHeader}>Daily Records</Text>
-      <FlatList
-        data={dailyRecords}
-        keyExtractor={(item) => item.id}
-        renderItem={renderRecord}
-        scrollEnabled={false} // Disable FlatList scroll inside ScrollView
-      />
-
-      {/* Load More */}
-      <TouchableOpacity style={styles.loadMoreBtn}>
-        <Text style={styles.loadMoreText}>Load More Records</Text>
-      </TouchableOpacity>
+      {dailyRecords.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>No records found for this month</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={dailyRecords}
+          keyExtractor={(item, index) => item.id || index.toString()}
+          renderItem={renderRecord}
+          scrollEnabled={false}
+        />
+      )}
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5', padding: 16 },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 10, color: '#666' },
   header: { fontSize: 24, fontWeight: 'bold', marginBottom: 4 },
   subHeader: { fontSize: 14, color: '#666', marginBottom: 16 },
-  actionRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
-  actionBtn: { backgroundColor: '#065f46', padding: 10, borderRadius: 8, flex: 0.48 },
-  actionText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },
-  timePeriodRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 16 },
-  timeBtn: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, backgroundColor: '#e0e0e0' },
-  timeBtnActive: { backgroundColor: '#065f46' },
-  timeText: { color: '#333', fontWeight: 'bold' },
-  timeTextActive: { color: '#fff' },
+  monthSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 8,
+  },
+  monthNavButton: { fontSize: 20, fontWeight: 'bold', color: '#065f46' },
+  monthText: { fontSize: 16, fontWeight: 'bold' },
   summaryCard: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 20 },
   summaryTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 12 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
@@ -166,8 +274,8 @@ const styles = StyleSheet.create({
   recordTime: { fontSize: 12, color: '#666' },
   hours: { fontWeight: 'bold', fontSize: 14 },
   status: { fontWeight: 'bold', marginTop: 4 },
-  loadMoreBtn: { marginTop: 12, padding: 12, backgroundColor: '#e0e0e0', borderRadius: 8, alignItems: 'center' },
-  loadMoreText: { color: '#333', fontWeight: 'bold' },
+  emptyState: { padding: 20, alignItems: 'center', backgroundColor: '#fff', borderRadius: 12 },
+  emptyStateText: { color: '#666' },
 });
 
 export default HistoryScreen;

@@ -11,6 +11,7 @@ import {
   Alert
 } from 'react-native';
 import { validateEmployee } from '../../lib/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = () => {
   const navigation = useNavigation<any>(); // get navigation instance
@@ -33,6 +34,8 @@ const LoginScreen = () => {
       }
       const { employee_id, has_embedding } = validation;
 
+      // When storing employeeId, convert it to string
+      await AsyncStorage.setItem('employeeId', employee_id.toString());
       if (!has_embedding) {
         // First login → redirect to EnrollScreen
         navigation.navigate('Enroll', { employeeId: employee_id });

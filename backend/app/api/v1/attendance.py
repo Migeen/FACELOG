@@ -40,3 +40,4 @@ async def clockout(
 
     os.remove(file_path)
     return result
+
