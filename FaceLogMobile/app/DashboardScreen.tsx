@@ -12,6 +12,7 @@ import {
 import { MaterialIcons, Feather, FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { useRoute } from '@react-navigation/native';
 
 type Summary = {
   today_checkins: number;
@@ -27,6 +28,10 @@ export default function DashboardScreen() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState<string>(new Date().toLocaleTimeString());
+  const route = useRoute<any>();
+  const { employeeId } = route.params;
+    
+  console.log(employeeId);
 
   useEffect(() => {
     // update clock every minute
@@ -66,7 +71,10 @@ export default function DashboardScreen() {
 
   const handleCheckInOut = () => {
     // navigate to camera/check-in screen
-    router.push('/Attendance/CameraScreen');
+    router.push({
+      pathname:'/attendance/CameraScreen',
+       params: { employeeId },
+});
   };
 
   const handleViewDetails = () => {
@@ -169,7 +177,7 @@ export default function DashboardScreen() {
           <Text style={styles.navLabel}>Check In/Out</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push('/Attendance/HistoryScreen')}>
+        <TouchableOpacity onPress={() =>  router.push({pathname:'/Attendance/CameraScreen',params: { employeeId }})}>
           <Feather name="clock" size={20} color="#374151" />
           <Text style={styles.navLabel}>History</Text>
         </TouchableOpacity>

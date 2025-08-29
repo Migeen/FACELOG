@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,106 +6,54 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Animated,
 } from 'react-native';
-import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import * as FaceDetector from 'expo-face-detector';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRoute } from '@react-navigation/native';
 
 const API_BASE = "http://192.168.1.9:8000/api/v1";
 
-export default function CameraScreen() {
+function CameraScreen() {
   const cameraRef = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
+  const route = useRoute<any>();
+  const { employeeId } = route.params;
   const [loading, setLoading] = useState(false);
-  const [livenessOk, setLivenessOk] = useState<boolean | null>(null);
-  const [statusText, setStatusText] = useState('Align your face inside the oval');
-  const faceHistoryRef = useRef<Array<{ x: number; y: number; width: number; height: number; t: number }>>([]);
-  const [readyToCaptureCount, setReadyToCaptureCount] = useState(0);
-  const progress = useRef(new Animated.Value(0)).current;
+  const [statusText, setStatusText] = useState('Position your face in the center and tap to capture');
   const [attendanceStatus, setAttendanceStatus] = useState<'clockin' | 'clockout'>('clockin');
 
-  // Animate progress bar
-  useEffect(() => {
-    Animated.timing(progress, {
-      toValue: Math.min(readyToCaptureCount / 3, 1),
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
-  }, [readyToCaptureCount]);
+  console.log(employeeId);
 
-  const onFacesDetected = ({ faces }: { faces: any[] }) => {
-    if (!faces || faces.length === 0) {
-      faceHistoryRef.current = [];
-      setLivenessOk(null);
-      setReadyToCaptureCount(0);
-      setStatusText('No face detected — align inside the oval');
-      return;
-    }
-
-    const face = faces.reduce((p, c) => (c.bounds.size.width > p.bounds.size.width ? c : p), faces[0]);
-    const { origin, size } = face.bounds;
-    const faceCenterX = origin.x + size.width / 2;
-    const faceCenterY = origin.y + size.height / 2;
-    const now = Date.now();
-
-    faceHistoryRef.current.push({ x: faceCenterX, y: faceCenterY, width: size.width, height: size.height, t: now });
-    faceHistoryRef.current = faceHistoryRef.current.filter((item) => now - item.t <= 1500);
-
-    setStatusText('Face detected. Checking liveness...');
-
-    const history = faceHistoryRef.current;
-    if (history.length >= 3) {
-      const first = history[0];
-      const last = history[history.length - 1];
-      const dx = Math.abs(last.x - first.x);
-      const dy = Math.abs(last.y - first.y);
-      const movement = Math.hypot(dx, dy);
-      const threshold = Math.max(first.width, 20) * 0.08;
-
-      if (movement >= threshold) {
-        setLivenessOk(true);
-        setStatusText('Liveness confirmed. Capturing shortly...');
-        setReadyToCaptureCount((prev) => Math.min(prev + 1, 3));
-      } else {
-        setLivenessOk(false);
-        setStatusText('Please move your head slightly for liveness');
-        setReadyToCaptureCount(0);
-      }
-    } else {
-      setLivenessOk(null);
-      setStatusText('Hold steady... making liveness check');
-      setReadyToCaptureCount(0);
-    }
-
-    if (readyToCaptureCount >= 3 && !loading) {
-      triggerCapture();
-    }
-  };
-
-  const triggerCapture = async () => {
+  const takePicture = async () => {
     setLoading(true);
     setStatusText('Capturing...');
     try {
       if (!cameraRef.current) throw new Error('Camera not ready');
+      if(!employeeId) throw new Error('EmployeeId not Found');
 
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.6, base64: true });
+      const photo = await cameraRef.current.takePictureAsync({ 
+        quality: 0.6, 
+        base64: true 
+      });
+      
       if (!photo?.base64) throw new Error('Capture failed');
 
       const token = await AsyncStorage.getItem('access_token');
 
-      const res = await fetch(`${API_BASE}/attendance/${attendanceStatus}`, {
+        const formData = new FormData();
+    formData.append("employee_id", String(employeeId));
+    formData.append("file", {
+      uri: photo.uri,
+      name: "attendance.jpg",
+      type: "image/jpeg",
+    } as any);
+
+      const res = await fetch(`${API_BASE}/attendance/clockin`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({
-          image_base64: photo.base64,
-          device_id: 'mobile-device-1',
-          liveness_score: livenessOk ? 0.9 : 0.2,
-          status: attendanceStatus,
-        }),
+        body: formData,
       });
 
       const data = await res.json();
@@ -128,13 +76,12 @@ export default function CameraScreen() {
       setStatusText('Capture failed. Try again.');
     } finally {
       setLoading(false);
-      setReadyToCaptureCount(0);
-      faceHistoryRef.current = [];
-      setLivenessOk(null);
+      setTimeout(() => {
+        setStatusText('Position your face in the center and tap to capture');
+      }, 3000);
     }
   };
 
-  // Handle permission states
   if (!permission) {
     return (
       <View style={styles.center}>
@@ -163,44 +110,43 @@ export default function CameraScreen() {
         ref={cameraRef}
         style={styles.camera}
         facing="front"
-        onFacesDetected={onFacesDetected}
-        faceDetectorSettings={{
-          mode: FaceDetector.FaceDetectorMode.fast,
-          detectLandmarks: FaceDetector.FaceDetectorLandmarks.all,
-          runClassifications: FaceDetector.FaceDetectorClassifications.none,
-        }}
       />
 
-      {/* Add your overlay components here */}
+      {/* Face guide overlay */}
+      <View style={styles.faceGuide}>
+        <View style={styles.faceOval} />
+      </View>
+
+      {/* UI Overlay */}
       <View style={styles.overlay}>
         <Text style={styles.statusText}>{statusText}</Text>
         
-        {/* Progress bar */}
-        <View style={styles.progressContainer}>
-          <Animated.View 
-            style={[
-              styles.progressBar,
-              {
-                width: progress.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0%', '100%']
-                })
-              }
-            ]}
-          />
-        </View>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.toggleButton}
+            onPress={() => setAttendanceStatus(
+              attendanceStatus === 'clockin' ? 'clockout' : 'clockin'
+            )}
+          >
+            <Text style={styles.toggleButtonText}>
+              {attendanceStatus === 'clockin' ? 'Clock In Mode' : 'Clock Out Mode'}
+            </Text>
+          </TouchableOpacity>
 
-        {/* Toggle button for clock in/out */}
-        <TouchableOpacity
-          style={styles.toggleButton}
-          onPress={() => setAttendanceStatus(
-            attendanceStatus === 'clockin' ? 'clockout' : 'clockin'
-          )}
-        >
-          <Text style={styles.toggleButtonText}>
-            {attendanceStatus === 'clockin' ? 'Clock In Mode' : 'Clock Out Mode'}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.captureButton, loading && styles.captureButtonDisabled]}
+            onPress={takePicture}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.captureButtonText}>
+                {attendanceStatus === 'clockin' ? 'Clock In' : 'Clock Out'}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -231,6 +177,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  faceGuide: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -100 }, { translateY: -140 }],
+    width: 200,
+    height: 280,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  faceOval: {
+    width: 200,
+    height: 280,
+    borderRadius: 100,
+    borderWidth: 3,
+    borderColor: '#00FF00',
+    backgroundColor: 'transparent',
+  },
   overlay: {
     position: 'absolute',
     bottom: 50,
@@ -246,18 +210,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     padding: 12,
     borderRadius: 8,
+    minHeight: 44,
   },
-  progressContainer: {
+  buttonContainer: {
     width: '100%',
-    height: 6,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderRadius: 3,
-    marginBottom: 20,
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#00FF00',
-    borderRadius: 3,
+    alignItems: 'center',
+    gap: 15,
   },
   toggleButton: {
     backgroundColor: 'rgba(0,122,255,0.8)',
@@ -270,4 +228,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  captureButton: {
+    backgroundColor: '#FF3B30',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  captureButtonDisabled: {
+    backgroundColor: 'rgba(255, 59, 48, 0.5)',
+  },
+  captureButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
 });
+
+export default CameraScreen;
