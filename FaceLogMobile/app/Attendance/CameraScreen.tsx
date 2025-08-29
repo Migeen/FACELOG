@@ -48,7 +48,7 @@ function CameraScreen() {
       type: "image/jpeg",
     } as any);
 
-      const res = await fetch(`${API_BASE}/attendance/clockin`, {
+      const res = await fetch(`${API_BASE}/attendance/${attendanceStatus}`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
