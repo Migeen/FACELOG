@@ -109,16 +109,45 @@ function CameraScreen() {
       <CameraView
         ref={cameraRef}
         style={styles.camera}
-        type={Camera.Constants.Type.front}
-        onFacesDetected={onFacesDetected}
-        faceDetectorSettings={{
-          mode: FaceDetector.Constants.Mode.fast,
-          detectLandmarks: FaceDetector.Constants.Landmarks.all,
-          runClassifications: FaceDetector.Constants.Classifications.none,
-        }}
+        facing="front"
       />
 
-      {/* The rest of your overlays, status box, progress bar, toggles remain unchanged */}
+      {/* Face guide overlay */}
+      <View style={styles.faceGuide}>
+        <View style={styles.faceOval} />
+      </View>
+
+      {/* UI Overlay */}
+      <View style={styles.overlay}>
+        <Text style={styles.statusText}>{statusText}</Text>
+        
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.toggleButton}
+            onPress={() => setAttendanceStatus(
+              attendanceStatus === 'clockin' ? 'clockout' : 'clockin'
+            )}
+          >
+            <Text style={styles.toggleButtonText}>
+              {attendanceStatus === 'clockin' ? 'Clock In Mode' : 'Clock Out Mode'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.captureButton, loading && styles.captureButtonDisabled]}
+            onPress={takePicture}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.captureButtonText}>
+                {attendanceStatus === 'clockin' ? 'Clock In' : 'Clock Out'}
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
