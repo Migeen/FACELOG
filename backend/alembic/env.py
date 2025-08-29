@@ -15,6 +15,7 @@ import app.models.device
 import app.models.attendance
 import app.models.embedding
 import app.models.department
+import app.models.reports
 
 from app.core.config import settings
 target_metadata = Base.metadata
