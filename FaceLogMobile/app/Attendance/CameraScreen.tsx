@@ -164,13 +164,7 @@ export default function CameraScreen() {
       <Camera
         ref={cameraRef}
         style={styles.camera}
-        type={Camera.Constants.Type.front}
-        onFacesDetected={onFacesDetected}
-        faceDetectorSettings={{
-          mode: FaceDetector.Constants.Mode.fast,
-          detectLandmarks: FaceDetector.Constants.Landmarks.all,
-          runClassifications: FaceDetector.Constants.Classifications.none,
-        }}
+        type="front"
       />
 
       {/* The rest of your overlays, status box, progress bar, toggles remain unchanged */}
