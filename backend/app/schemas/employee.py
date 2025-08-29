@@ -3,15 +3,32 @@ from typing import Optional
 
 
 class EmployeeBase(BaseModel):
-    name: str
+    id: int
+    first_name: str
+    last_name: str
     email: Optional[str]
-    role: Optional[str]
+    password: Optional[str]
+    position: Optional[str]
     phone: Optional[str] = None
     salary: Optional[str] = None
     department: Optional[str] = None
+    status: Optional[str] = None
+    checkin: Optional[str] = None
+    checkout: Optional[str] = None
 
 class EmployeeCreate(EmployeeBase):
-    password: str
+    id: int
+    first_name: str
+    last_name: str
+    email: Optional[str]
+    password: Optional[str]
+    position: Optional[str]
+    phone: Optional[str] = None 
+    salary: Optional[str] = None
+    department: Optional[str] = None
+    status: Optional[str] = None
+    checkin: Optional[str] = None
+    checkout: Optional[str] = None
 
 class EmployeeLogin(BaseModel):
     email: str

@@ -131,15 +131,6 @@ export default function EmployeeDetail() {
                 {employee.department}
               </div>
             </div>
-            {/* Department */}
-            <div>
-              <div className="text-xs md:text-sm text-muted-foreground">
-                Department:
-              </div>
-              <div className="font-medium text-sm md:text-base">
-                {employee.department}
-              </div>
-            </div>
 
             {/* Position */}
             <div>
@@ -154,7 +145,7 @@ export default function EmployeeDetail() {
             {/* Roll Number */}
             <div>
               <div className="text-xs md:text-sm text-muted-foreground">
-                Roll Number:
+                Id:
               </div>
               <div className="font-medium text-sm md:text-base">
                 {employee.rollNo}

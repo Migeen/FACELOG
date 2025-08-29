@@ -159,7 +159,7 @@ export default function AddEmployeeDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="rollNo">Roll Number</Label>
+              <Label htmlFor="rollNo">Id</Label>
               <Input
                 id="rollNo"
                 value={formData.rollNo}
