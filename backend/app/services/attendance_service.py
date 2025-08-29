@@ -48,11 +48,11 @@ async def mark_attendance(employee_id: int, image_path: str, status: str, db: As
             break
 
     if not recognized:
-        return {"success": False, "message": "Face not recognized ❌"}
+        raise HTTPException(status_code=401, detail="Face not recognized ❌")
 
     # Save attendance log
     attendance = Attendance(
-        employee_id=employee_id,                                                                                                                                                                                                                                                                
+        employee_id=employee_id,
         type=status,
         timestamp=datetime.utcnow()
     )
@@ -61,7 +61,6 @@ async def mark_attendance(employee_id: int, image_path: str, status: str, db: As
     await db.refresh(attendance)
 
     return {
-        "success":True,
         "message": f"{status.capitalize()} successful ✅",
         "employee_id": employee_id,
         "status": status,

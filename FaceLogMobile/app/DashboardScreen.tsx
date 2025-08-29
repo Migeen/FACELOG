@@ -72,7 +72,7 @@ export default function DashboardScreen() {
   const handleCheckInOut = () => {
     // navigate to camera/check-in screen
     router.push({
-      pathname: '/Attendance/CheckScreen',
+      pathname: '/Attendance/CameraScreen',
       params: { employeeId },
     });
   };
@@ -172,16 +172,13 @@ export default function DashboardScreen() {
           <Text style={styles.navLabel}>Dashboard</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push({
-          pathname: '/Attendance/CheckScreen',
-          params: { employeeId },
-        })}>
+        <TouchableOpacity onPress={() => router.push('/Attendance/CameraScreen')}>
           <Feather name="camera" size={20} color="#374151" />
           <Text style={styles.navLabel}>Check In/Out</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => router.push({
-          pathname: '/Attendance/HistoryScreen',
+          pathname: '/Attendance/CameraScreen',
           params: { employeeId },
         })}>
           <Feather name="clock" size={20} color="#374151" />

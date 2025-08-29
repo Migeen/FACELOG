@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
 from .models_base import Base   # <- use this Base
 
-DATABASE_URL = settings.DATABASE_URL  # e.g., postgres+asyncpg://user:password@localhost:5432/facelog
+DATABASE_URL = settings.DATABASE_URL 
 
 # Create async engine
 engine = create_async_engine(DATABASE_URL, echo=True)
@@ -15,8 +15,6 @@ AsyncSessionLocal = sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False
 )
-
-
 # Dependency to get async session
 async def get_db() -> AsyncSession:
     async with AsyncSessionLocal() as session:
@@ -24,6 +22,6 @@ async def get_db() -> AsyncSession:
 
 # Initialize DB (create tables)
 async def init_db():
-    from app.models import employee, attendance, embedding, device, reports  # noqa: F401
+    from app.models import employee, attendance, embedding, device, department  # noqa: F401
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
