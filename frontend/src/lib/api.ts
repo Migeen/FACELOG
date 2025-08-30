@@ -1,6 +1,9 @@
 import { Employee } from '@/types/employee';
 import { AttendanceRecord, AttendanceSummary } from '@/types/attendance';
 
+const API_BASE_URL = 'http://localhost:8000/api/v1';
+
+
 // Mock data
 const mockEmployees: Employee[] = [
   {
@@ -14,7 +17,9 @@ const mockEmployees: Employee[] = [
     hireDate: '2023-01-15',
     status: 'active',
     salary: 75000,
-    rollNo: 'EMP001'
+    rollNo: 'EMP001',
+    checkin: '',
+    checkout: ''
   },
   {
     id: '2',
@@ -27,7 +32,9 @@ const mockEmployees: Employee[] = [
     hireDate: '2022-08-20',
     status: 'active',
     salary: 85000,
-    rollNo: 'EMP002'
+    rollNo: 'EMP002',
+    checkin: '',
+    checkout: ''
   },
   {
     id: '3',
@@ -40,7 +47,9 @@ const mockEmployees: Employee[] = [
     hireDate: '2023-03-10',
     status: 'active',
     salary: 65000,
-    rollNo: 'EMP003'
+    rollNo: 'EMP003',
+    checkin: '',
+    checkout: ''
   },
   {
     id: '4',
@@ -53,7 +62,9 @@ const mockEmployees: Employee[] = [
     hireDate: '2021-11-05',
     status: 'active',
     salary: 70000,
-    rollNo: 'EMP004'
+    rollNo: 'EMP004',
+    checkin: '',
+    checkout: ''
   }
 ];
 
@@ -94,50 +105,107 @@ const mockAttendance: AttendanceRecord[] = [
   }
 ];
 
-// Mock API functions
+
+// // Mock API functions
+// export const api = {
+//   employees: {
+//     getAll: (): Promise<Employee[]> => {
+//       return Promise.resolve(mockEmployees);
+//     },
+//     getById: (id: string): Promise<Employee | null> => {
+//       const employee = mockEmployees.find(emp => emp.id === id);
+//       return Promise.resolve(employee || null);
+//     },
+//     create: (employee: Omit<Employee, 'id'>): Promise<Employee> => {
+//       const newEmployee = { ...employee, id: Date.now().toString() };
+//       mockEmployees.push(newEmployee);
+//       return Promise.resolve(newEmployee);
+//     },
+//     update: (id: string, updates: Partial<Employee>): Promise<Employee> => {
+//       const index = mockEmployees.findIndex(emp => emp.id === id);
+//       if (index !== -1) {
+//         mockEmployees[index] = { ...mockEmployees[index], ...updates };
+//         return Promise.resolve(mockEmployees[index]);
+//       }
+//       throw new Error('Employee not found');
+//     }
+//   },
+  
+//   attendance: {
+//     getAll: (): Promise<AttendanceRecord[]> => {
+//       return Promise.resolve(mockAttendance);
+//     },
+//     getByEmployee: (employeeId: string): Promise<AttendanceRecord[]> => {
+//       const records = mockAttendance.filter(record => record.employeeId === employeeId);
+//       return Promise.resolve(records);
+//     },
+//     getSummary: (): Promise<AttendanceSummary> => {
+//       const today = new Date().toISOString().split('T')[0];
+//       const todayRecords = mockAttendance.filter(record => record.date === today);
+      
+//       return Promise.resolve({
+//         totalEmployees: mockEmployees.length,
+//         presentToday: todayRecords.filter(r => r.status === 'present').length,
+//         absentToday: todayRecords.filter(r => r.status === 'absent').length,
+//         lateToday: todayRecords.filter(r => r.status === 'late').length,
+//         avgWorkHours: todayRecords.reduce((sum, r) => sum + (r.workHours || 0), 0) / todayRecords.length || 0
+//       });
+//     }
+//   }
+// };
+
+const mapEmployee = (data: any): Employee => ({
+  id: data.id,
+  firstName: data.first_name,
+  lastName: data.last_name,
+  email: data.email,
+  phone: data.phone,
+  position: data.position,
+  status: data.status,
+  checkin: data.checkin,
+  checkout: data.checkout,
+  hireDate: data.hire_date,
+  salary: data.salary,
+  department: data.department_name,
+  rollNo: data.rollNo, // optional
+});
+
 export const api = {
   employees: {
-    getAll: (): Promise<Employee[]> => {
-      return Promise.resolve(mockEmployees);
+    getAll: async (): Promise<Employee[]> => {
+      const res = await fetch(`${API_BASE_URL}/employees/`);
+      if (!res.ok) throw new Error('Failed to fetch employees');
+      const data = await res.json();
+      return data.map(mapEmployee);
     },
-    getById: (id: string): Promise<Employee | null> => {
-      const employee = mockEmployees.find(emp => emp.id === id);
-      return Promise.resolve(employee || null);
+    getById: async (id: string | number): Promise<Employee | null> => {
+      const res = await fetch(`${API_BASE_URL}/employees/${id}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return mapEmployee(data);
     },
-    create: (employee: Omit<Employee, 'id'>): Promise<Employee> => {
-      const newEmployee = { ...employee, id: Date.now().toString() };
-      mockEmployees.push(newEmployee);
-      return Promise.resolve(newEmployee);
+    create: async (employee: Partial<Employee>): Promise<Employee> => {
+      const res = await fetch(`${API_BASE_URL}/employees/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(employee),
+      });
+      if (!res.ok) throw new Error('Failed to create employee');
+      const data = await res.json();
+      return mapEmployee(data);
     },
-    update: (id: string, updates: Partial<Employee>): Promise<Employee> => {
-      const index = mockEmployees.findIndex(emp => emp.id === id);
-      if (index !== -1) {
-        mockEmployees[index] = { ...mockEmployees[index], ...updates };
-        return Promise.resolve(mockEmployees[index]);
-      }
-      throw new Error('Employee not found');
+    delete: async (id: string | number): Promise<void> => {
+      const res = await fetch(`${API_BASE_URL}/employees/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete employee');
     }
   },
-  
+
   attendance: {
-    getAll: (): Promise<AttendanceRecord[]> => {
-      return Promise.resolve(mockAttendance);
-    },
-    getByEmployee: (employeeId: string): Promise<AttendanceRecord[]> => {
-      const records = mockAttendance.filter(record => record.employeeId === employeeId);
-      return Promise.resolve(records);
-    },
-    getSummary: (): Promise<AttendanceSummary> => {
-      const today = new Date().toISOString().split('T')[0];
-      const todayRecords = mockAttendance.filter(record => record.date === today);
-      
-      return Promise.resolve({
-        totalEmployees: mockEmployees.length,
-        presentToday: todayRecords.filter(r => r.status === 'present').length,
-        absentToday: todayRecords.filter(r => r.status === 'absent').length,
-        lateToday: todayRecords.filter(r => r.status === 'late').length,
-        avgWorkHours: todayRecords.reduce((sum, r) => sum + (r.workHours || 0), 0) / todayRecords.length || 0
-      });
+    getByEmployee: async (employeeId: string | number): Promise<AttendanceRecord[]> => {
+      const res = await fetch(`${API_BASE_URL}/attendance/${employeeId}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data;
     }
   }
 };
