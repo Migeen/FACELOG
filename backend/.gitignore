@@ -1,5 +1,16 @@
+<<<<<<< HEAD
+.venv
+.env
+=======
 
 venv/
+<<<<<<< HEAD
 /__pycache__/
 /*.py[cod]
 /alembic/versions/*
+=======
+>>>>>>> e5459df6b595e09a610cca8c546843802ffa2ea1
+
+__pycache__/
+*.pyc
+>>>>>>> 91bddce016bbdb332e016d3e527117971c22bd89

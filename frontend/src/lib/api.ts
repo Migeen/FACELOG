@@ -5,6 +5,9 @@ import axios from 'axios';
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 
+const API_BASE_URL = 'http://localhost:8000/api/v1';
+
+
 // Mock data
 const mockEmployees: Employee[] = [
   {
@@ -106,7 +109,12 @@ const mockAttendance: AttendanceRecord[] = [
   }
 ];
 
+<<<<<<< HEAD
 // Mock API functions
+=======
+
+// // Mock API functions
+>>>>>>> 91bddce016bbdb332e016d3e527117971c22bd89
 // export const api = {
 //   employees: {
 //     getAll: (): Promise<Employee[]> => {
@@ -154,6 +162,7 @@ const mockAttendance: AttendanceRecord[] = [
 //   }
 // };
 
+<<<<<<< HEAD
 // Create axios instance with base configuration
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -206,3 +215,60 @@ export const api = {
     }
   },
 };
+=======
+const mapEmployee = (data: any): Employee => ({
+  id: data.id,
+  firstName: data.first_name,
+  lastName: data.last_name,
+  email: data.email,
+  phone: data.phone,
+  position: data.position,
+  status: data.status,
+  checkin: data.checkin,
+  checkout: data.checkout,
+  hireDate: data.hire_date,
+  salary: data.salary,
+  department: data.department_name,
+  rollNo: data.rollNo, // optional
+});
+
+export const api = {
+  employees: {
+    getAll: async (): Promise<Employee[]> => {
+      const res = await fetch(`${API_BASE_URL}/employees/`);
+      if (!res.ok) throw new Error('Failed to fetch employees');
+      const data = await res.json();
+      return data.map(mapEmployee);
+    },
+    getById: async (id: string | number): Promise<Employee | null> => {
+      const res = await fetch(`${API_BASE_URL}/employees/${id}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return mapEmployee(data);
+    },
+    create: async (employee: Partial<Employee>): Promise<Employee> => {
+      const res = await fetch(`${API_BASE_URL}/employees/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(employee),
+      });
+      if (!res.ok) throw new Error('Failed to create employee');
+      const data = await res.json();
+      return mapEmployee(data);
+    },
+    delete: async (id: string | number): Promise<void> => {
+      const res = await fetch(`${API_BASE_URL}/employees/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete employee');
+    }
+  },
+
+  attendance: {
+    getByEmployee: async (employeeId: string | number): Promise<AttendanceRecord[]> => {
+      const res = await fetch(`${API_BASE_URL}/attendance/${employeeId}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data;
+    }
+  }
+};
+>>>>>>> 91bddce016bbdb332e016d3e527117971c22bd89
