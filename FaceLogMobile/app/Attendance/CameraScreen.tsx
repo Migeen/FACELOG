@@ -155,21 +155,6 @@ function CameraScreen() {
 
   return (
     <View style={styles.container}>
-<<<<<<< HEAD
-      <CameraView
-        ref={cameraRef}
-        style={styles.camera}
-        type={Camera.Constants.Type.front}
-        onFacesDetected={onFacesDetected}
-        faceDetectorSettings={{
-          mode: FaceDetector.Constants.Mode.fast,
-          detectLandmarks: FaceDetector.Constants.Landmarks.all,
-          runClassifications: FaceDetector.Constants.Classifications.none,
-        }}
-      />
-
-      {/* The rest of your overlays, status box, progress bar, toggles remain unchanged */}
-=======
       <CameraView ref={cameraRef} style={styles.camera} facing="front" />
       <View style={styles.faceGuide}><View style={styles.faceOval} /></View>
 
@@ -189,7 +174,6 @@ function CameraScreen() {
           </TouchableOpacity>
         </View>
       </View>
->>>>>>> parent of 621dd61 (done)
     </View>
   );
 }

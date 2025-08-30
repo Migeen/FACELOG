@@ -32,6 +32,8 @@ export default function Employees() {
     fetchEmployees();
   }, []);
 
+
+  
   useEffect(() => {
     const filtered = employees.filter(employee =>
       `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||

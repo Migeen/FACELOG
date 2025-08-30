@@ -18,13 +18,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/lib/api";
 import { Employee } from "@/types/employee";
 import { Plus } from "lucide-react";
+import axios from "axios"; // Import axios directly
 
 interface AddEmployeeDialogProps {
   onEmployeeAdded: (employee: Employee) => void;
 }
+
+// Define your API base URL
+const API_BASE_URL = 'http://localhost:8000';
 
 export default function AddEmployeeDialog({
   onEmployeeAdded,
@@ -54,12 +57,24 @@ export default function AddEmployeeDialog({
 
     try {
       const employeeData = {
-        ...formData,
-        salary: formData.salary ? parseFloat(formData.salary) : undefined,
-        hireDate: new Date().toISOString().split("T")[0],
+      name: formData.firstName + " " + formData.lastName,  // Change to snake_case
+      email: formData.email,
+      password: formData.password,
+      position: formData.position,
+      phone: formData.phone,
+      salary: formData.salary ? formData.salary.toString() : undefined, // Ensure string
+      department: formData.department,
+      status: formData.status,
+      checkin: formData.checkin,
+      checkout: formData.checkout,
       };
 
-      const newEmployee = await api.employees.create(employeeData);
+      console.log('Sending data:', employeeData); // Debug what's being sent
+
+      // Direct axios call to your backend endpoint
+      const response = await axios.post(`${API_BASE_URL}/api/v1/employees`, employeeData);
+      const newEmployee = response.data;
+
       onEmployeeAdded(newEmployee);
 
       toast({
@@ -67,6 +82,7 @@ export default function AddEmployeeDialog({
         description: "Employee has been added successfully.",
       });
 
+      // Reset form
       setFormData({
         firstName: "",
         lastName: "",
@@ -83,10 +99,20 @@ export default function AddEmployeeDialog({
       });
 
       setOpen(false);
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error adding employee:", error);
+      
+      // Better error message handling
+      let errorMessage = "Failed to add employee. Please try again.";
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast({
         title: "Error",
-        description: "Failed to add employee. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -182,7 +208,7 @@ export default function AddEmployeeDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="checkin">CheckOut</Label>
+              <Label htmlFor="checkout">CheckOut</Label>
               <Input
                 id="checkout"
                 type="time"

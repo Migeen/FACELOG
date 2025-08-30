@@ -68,6 +68,7 @@ export default function CheckInOutScreen() {
       const lastIn = new Date(Number(lastInStr));
       const lastOut = new Date(Number(lastOutStr));
       const totalMinutes = Math.floor((lastOut.getTime() - lastIn.getTime()) / 60000);
+      const totalHours = totalMinutes / 60;
 
       // Today's date in YYYY-MM-DD
       const today = new Date();
@@ -86,7 +87,7 @@ export default function CheckInOutScreen() {
         weekday: todayWeekday,
         last_checkin: lastIn.toISOString(),
         last_checkout: lastOut.toISOString(),
-        total_hours_today: totalMinutes, // send in minutes
+        total_hours_today: totalHours, // send in minutes
       };
 
       const token = await AsyncStorage.getItem('access_token');

@@ -4,8 +4,7 @@ from typing import Optional
 
 class EmployeeBase(BaseModel):
     id: int
-    first_name: str
-    last_name: str
+    name: str
     email: Optional[str]
     password: Optional[str]
     position: Optional[str]
@@ -18,8 +17,7 @@ class EmployeeBase(BaseModel):
 
 class EmployeeCreate(EmployeeBase):
     id: int
-    first_name: str
-    last_name: str
+    name: str
     email: Optional[str]
     password: Optional[str]
     position: Optional[str]
