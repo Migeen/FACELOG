@@ -1,0 +1,27 @@
+# version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://facelog:facelog@db:5432/facelog
+    depends_on:
+      - db
+
+  db:
+    image: pgvector/pgvector:pg15   # use the local image you already have
+    environment:
+      POSTGRES_USER: facelog
+      POSTGRES_PASSWORD: facelog
+      POSTGRES_DB: facelog
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      
+volumes:
+  pg_data:

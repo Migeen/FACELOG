@@ -1,0 +1,14 @@
+FROM postgres:15
+
+# Install dependencies for pgvector
+RUN apt-get update && apt-get install -y \
+    postgresql-server-dev-15 build-essential git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clone and install pgvector
+RUN git clone https://github.com/pgvector/pgvector.git /pgvector \
+    && cd /pgvector \
+    && make install
+
+# Copy init.sql to automatically create pgvector extension
+COPY init.sql /docker-entrypoint-initdb.d/
